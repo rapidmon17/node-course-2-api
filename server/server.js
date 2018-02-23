@@ -2,7 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 
 var {mongoose} = require('./db/mongoose');
-var {Todo} = require('./models/Todo');
+var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
 
 var app = express();
@@ -30,6 +30,18 @@ app.get('/todos', (req, res) =>{
         res.status(400).send(e);
     })
 })
+
+app.delete('/todos', (req, res) =>{
+    Todo.remove().then((result) => {
+        if(result.n == 0)
+            res.send("No object to delete");
+        else {
+            res.send("Object deleted");
+        }
+    }, (e) =>{
+        res.status(400).send(e);
+    });
+});
 
 app.listen(port, () => {
     console.log(`Started on port ${port}`);
