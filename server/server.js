@@ -7,13 +7,37 @@ const {ObjectID} = require('mongodb');
 
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
-var {userModel} = require('./models/user');
+var {User} = require('./models/user');
+var {authenticate} = require('./middleware/authenticate');
 
 var app = express();
+
+//dynamically obtain port number in case of local vs heroku
 const port = process.env.PORT || 3000;
 
+//Parser for JSON (middleware)
 app.use(bodyParser.json());
 
+//Endpoint to return current user, using authenticate middleware
+app.get('/users/me', authenticate, (req, res) => {
+    res.send(req.user);
+});
+
+// //Endpoint to return current user
+// app.get('/users/me', (req, res) => {
+//     var token = req.header('x-auth');
+
+//     User.findByToken(token).then((user) => {
+//         if(!user) {
+//             return Promise.reject();
+//         }
+//         res.send(user);
+//     }).catch((e) => {
+//         res.status(401).send();
+//     });
+// });
+
+//Endpoint to create new Todo object
 app.post('/todos', (req, res) => {
     var todo = new Todo({
         text: req.body.text
@@ -27,9 +51,10 @@ app.post('/todos', (req, res) => {
     });
 })
 
+//Endpoint to create a new user object.
 app.post('/user', (req, res) => {
     var body = _.pick(req.body,['email', 'password']);
-    var user = new userModel(body);
+    var user = new User(body);
     console.log(JSON.stringify(user));
 
     user.save().then(() => {
@@ -43,6 +68,7 @@ app.post('/user', (req, res) => {
     });
 })
 
+//Endpoint to get the list of Todos
 app.get('/todos', (req, res) =>{
     Todo.find().then((todos) => {
         res.send({todos})
@@ -51,6 +77,7 @@ app.get('/todos', (req, res) =>{
     })
 })
 
+//Endpoint to delete a Todo Object
 app.delete('/todos', (req, res) =>{
     Todo.remove().then((result) => {
         if(result.n == 0)
@@ -63,6 +90,7 @@ app.delete('/todos', (req, res) =>{
     });
 });
 
+//Endpoint to update a specific Todo object
 app.patch('/todos/:id', (req, res)=> {
     var id = req.params.id;
     var body = _.pick(req.body, ['text','completed']);
@@ -94,7 +122,7 @@ app.patch('/todos/:id', (req, res)=> {
 });
 
 
-
+//Server listening for requests on port
 app.listen(port, () => {
     console.log(`Started on port ${port}`);
 });

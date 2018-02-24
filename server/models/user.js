@@ -3,6 +3,7 @@ const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
 
+//User object schema
 var UserSchema = new mongoose.Schema({
     email: {
         type: String,
@@ -33,6 +34,7 @@ var UserSchema = new mongoose.Schema({
     }]
 });
 
+//Method to override JSON object we send back
 UserSchema.methods.toJSON = function() {
     var user = this;
     var userObject = user.toObject();
@@ -40,6 +42,7 @@ UserSchema.methods.toJSON = function() {
     return _.pick(userObject, ['_id', 'email']);
 };
 
+//Generating the token for a new user
 UserSchema.methods.generateAuthToken = function () {
     var user = this;
     var access = 'auth';
@@ -49,8 +52,32 @@ UserSchema.methods.generateAuthToken = function () {
 
     return user.save().then(() => {
         return token;
-    })
+    });
 };
-var userModel = mongoose.model('User', UserSchema);
 
-module.exports={userModel};
+
+//Static method to find a user by Token
+UserSchema.statics.findByToken = function (token) {
+    var User = this;
+    var decoded;
+
+    try {
+        decoded = jwt.verify(token,'abc123');
+
+    } catch (e) {
+        // return new Promise((resolve, reject) => {
+        //     reject();}); //Longer version
+        return Promise.reject();
+        
+    }
+    return User.findOne({
+        '_id': decoded._id,
+        'tokens.token':token,
+        'tokens.access':'auth'
+    });
+}
+
+//mapping User object to userModel
+var User = mongoose.model('User', UserSchema);
+
+module.exports={User};
