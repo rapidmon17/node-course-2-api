@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 //User object schema
 var UserSchema = new mongoose.Schema({
@@ -32,6 +33,21 @@ var UserSchema = new mongoose.Schema({
             required:true
         }
     }]
+});
+
+//Mongoose middleware to salt password before a user is added
+UserSchema.pre('save', function (next) {
+    var user = this;
+    if (user.isModified('password')) {
+        bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(user.password, salt, (err, hash) => {
+                user.password = hash;
+                next();
+            });
+        });
+    } else {
+        next();
+    }
 });
 
 //Method to override JSON object we send back
