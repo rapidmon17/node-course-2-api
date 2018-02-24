@@ -7,7 +7,7 @@ const {ObjectID} = require('mongodb');
 
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
-var {User} = require('./models/user');
+var {userModel} = require('./models/user');
 
 var app = express();
 const port = process.env.PORT || 3000;
@@ -23,6 +23,22 @@ app.post('/todos', (req, res) => {
     todo.save().then((doc) => {
         res.send(doc);
     }, (e) => {
+        res.status(400).send(e);
+    });
+})
+
+app.post('/user', (req, res) => {
+    var body = _.pick(req.body,['email', 'password']);
+    var user = new userModel(body);
+    console.log(JSON.stringify(user));
+
+    user.save().then(() => {
+       return user.generateAuthToken();
+        
+    }).then((token) => {
+        console.log(`this is the token ${token}`);
+        res.header('x-auth',token).send(user);
+    }).catch((e) => {
         res.status(400).send(e);
     });
 })
@@ -76,6 +92,8 @@ app.patch('/todos/:id', (req, res)=> {
         res.status(400).send();
     })
 });
+
+
 
 app.listen(port, () => {
     console.log(`Started on port ${port}`);
