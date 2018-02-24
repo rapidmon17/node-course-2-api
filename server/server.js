@@ -65,6 +65,15 @@ app.post('/users/login', (req, res) => {
     })
 })
 
+//Endpoint to logout a user
+app.delete('/users/logout', authenticate, (req, res) => {
+    req.user.removeToken(req.token).then(() => {
+        res.status(200).send();
+    }, () => {
+        res.status(400).send();
+    });
+});
+
 //Endpoint to create a new user object.
 app.post('/user', (req, res) => {
     var body = _.pick(req.body,['email', 'password']);
